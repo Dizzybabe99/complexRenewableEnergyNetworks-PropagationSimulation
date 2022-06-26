@@ -11,8 +11,8 @@ applyBorder = True
 
 # Width and height of nodes, number of nodes equals wN*wH
 # Please only use even numbers
-wN = 100
-hN = 100
+wN = 200
+hN = 200
 
 # Reduction factor in arrow generation (integers only!)
 rfa = 1
@@ -29,13 +29,27 @@ dy = -h/2
 dl = 2/h
 
 # Create position array with charges
-xCh = [w//2-w//8, w//2+w//8]
-yCh = [h//2,       h//2]
-cha = [1,          -1]
+#xCh = [w//2-w//8, w//2+w//8, w//2,      w//2,      ]
+#yCh = [h//2,      h//2,      h//2+h//8, h//2-h//8, ]
+#cha = [1,         1,         -1,         -1,       ]
+
+# Create postions on ellipse
+xCh = list()
+yCh = list()
+cha = list()
+a = w//8
+b = h//8
+steps=32
+for i in range(steps):
+    angle=np.pi*2.*i/steps
+    xCh.append(int(w/2+a*np.cos(angle)))
+    yCh.append(int(h/2+b*np.sin(angle)))
+    cha.append((-1)**i)
+print(xCh, yCh, cha)
 
 # Potential
 # Multiplier for resolution of image of the potential
-potentialScale = pS = 4
+potentialScale = pS = 5
 # Define the number of countour lines
 # With a higher resoulution of the potential and grid, more lines
 # are concentrated near the charges!
@@ -46,7 +60,7 @@ contourPotMin = -10
 # Transformation function on the coordinate System.
 def transform(x,y):
     return x,y
-    #return x,y+x
+    #return np.sign(x)*np.abs(x**1.5)+np.sign(y)*np.abs(y**1.5), np.sign(y)*np.abs(y**3)
     #if x == 0:
     #    return 1, y
     #return np.abs(x)**np.abs(x), y
@@ -339,11 +353,13 @@ plt.close()
 
 
 # Generate the potential
+print("--- Generating Potential Field ---")
 potential = genPotential(xCh, yCh, cha, (h*potentialScale, w*potentialScale), potentialScale)
 plt.imshow(potential)
 plt.colorbar()
 
 # Calculate the leves for the contours
+print("--- Calculating countour levels ---")
 print(np.min(potential), np.max(potential))
 cLevels = -np.logspace(contourPotMin, np.log10(-np.min(potential)), noOfContours)[::-1]
 cLevels = np.append(cLevels,[0])
@@ -355,23 +371,25 @@ plt.close()
 
 
 if generateArrowsSim:
+    print("--- Generating el. Field ---")
     #ax = plt.axes()
     plt.imshow(potential)
     plt.colorbar()
     plt.contour(potential, levels=cLevels, colors="black", linewidths=0.3, linestyles="solid")
     plt.streamplot(XGrid, YGrid, calcResX, -calcResY, linewidth=0.1, arrowsize=0.2, density=pS, color="black")
-    plt.savefig("{}/arrows-calc.png".format(folder), dpi=500)
+    plt.savefig("{}/arrows-calc.png".format(folder), dpi=2000)
     #plt.show()
     plt.close()
     
     # Divergence methode
+    print("--- Generating el. Field via divergence ---")
     plt.imshow(potential)
     plt.colorbar()
     plt.contour(potential, levels=cLevels, colors="black", linewidths=0.3, linestyles="solid")
     U = -np.diff(potential[1:, :], axis=1)
     V = -np.diff(potential[:, 1:], axis=0)
     plt.streamplot(XGridB[1:], YGridB[1:], U, V, linewidth=0.1, arrowsize=0.2, density=pS, color="black")
-    plt.savefig("{}/arrows-calc-divergence.png".format(folder), dpi=500)
+    plt.savefig("{}/arrows-calc-divergence.png".format(folder), dpi=2000)
     #plt.show()
     plt.close()
 
@@ -480,7 +498,7 @@ for i in range(iMax):
                     flowsUp[y,x]    = up
                     flowsRight[y,x] = right
         plt.streamplot(XGrid, YGrid, flowsRight, flowsUp, linewidth=0.1, arrowsize=0.2, density=pS, color="black")
-        plt.savefig("{}/arrows-{}.png".format(folder,(i+1)*step), dpi=500)
+        plt.savefig("{}/arrows-{}.png".format(folder,(i+1)*step), dpi=2000)
     if i+1 == iMax and showEnd:
         plt.show()
     plt.close()
