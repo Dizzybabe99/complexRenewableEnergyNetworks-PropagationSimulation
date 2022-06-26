@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import numpy as np
+import cupy as np
 from time import time
 
 showEnd = False
@@ -11,8 +11,8 @@ applyBorder = True
 
 # Width and height of nodes, number of nodes equals wN*wH
 # Please only use even numbers
-wN = 200
-hN = 200
+wN = 500
+hN = 500
 
 # Reduction factor in arrow generation (integers only!)
 rfa = 1
@@ -39,7 +39,7 @@ yCh = list()
 cha = list()
 a = w//8
 b = h//8
-steps=32
+steps=8
 for i in range(steps):
     angle=np.pi*2.*i/steps
     xCh.append(int(w/2+a*np.cos(angle)))
@@ -49,7 +49,7 @@ print(xCh, yCh, cha)
 
 # Potential
 # Multiplier for resolution of image of the potential
-potentialScale = pS = 5
+potentialScale = pS = 1
 # Define the number of countour lines
 # With a higher resoulution of the potential and grid, more lines
 # are concentrated near the charges!
