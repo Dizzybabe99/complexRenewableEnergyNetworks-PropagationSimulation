@@ -6,7 +6,7 @@ showEnd = False
 generateArrows = True
 generateArrowsSim = True
 generateAdditionalArrows = False
-folder = "100S-XX-Y"
+folder = "0-stream"
 applyBorder = True
 
 # Width and height of nodes, number of nodes equals wN*wH
@@ -35,7 +35,7 @@ cha = [1,          -1]
 
 # Potential
 # Multiplier for resolution of image of the potential
-potentialScale = pS = 8
+potentialScale = pS = 4
 # Define the number of countour lines
 # With a higher resoulution of the potential and grid, more lines
 # are concentrated near the charges!
@@ -45,11 +45,11 @@ contourPotMin = -10
 
 # Transformation function on the coordinate System.
 def transform(x,y):
-    #return x,y
+    return x,y
     #return x,y+x
-    if x == 0:
-        return 1, y
-    return np.abs(x)**np.abs(x), y
+    #if x == 0:
+    #    return 1, y
+    #return np.abs(x)**np.abs(x), y
 
 def transformB(x,y):
     global dx, dy, dl
@@ -259,6 +259,11 @@ if not (wN//2 == wN/2 and hN//2 == hN//2):
     input("Press ENTER to exit")
     exit()
 
+XGrid = np.array(range(w))*pS
+YGrid = np.array(range(h))*pS
+XGridB= np.array(range(w*pS))
+YGridB= np.array(range(h*pS))
+
 
 
 # Aligning chages to grid
@@ -354,21 +359,22 @@ if generateArrowsSim:
     plt.imshow(potential)
     plt.colorbar()
     plt.contour(potential, levels=cLevels, colors="black", linewidths=0.3, linestyles="solid")
-    for x in range(1,w-1,2*rfa):
-        for y in range(2,h-1,2*rfa):
-            up    = -calcResY[y,x]
-            right = calcResX[y,x]
-            length= np.sqrt(up**2+right**2)*0.2
-            plt.annotate("", xy=((x+right)*pS,(y+up)*pS), xytext=(x*pS,y*pS), arrowprops=dict(arrowstyle="->, head_width=.05, head_length={}".format(length), lw=.2))
-            #ax.arrow(x*pS,y*pS,(x+right)*pS,(y+up)*pS, head_width=0.01, head_length=0.01)
-    if generateAdditionalArrows:
-        for x in range(2,w-1,2*rfa):
-            for y in range(1,h-1,2*rfa):
-                up    = -calcResY[y,x]
-                right = calcResX[y,x]
-                length= np.sqrt(up**2+right**2)*0.2
-                plt.annotate("", xy=((x+right)*pS,(y+up)*pS), xytext=(x*pS,y*pS), arrowprops=dict(arrowstyle="->, head_width=.05, head_length={}".format(length), lw=.2))
-                #ax.arrow(x*pS/2,y*pS,(x+right)*pS,(y+up)*pS, head_width=0.01, head_length=0.01)
+    #for x in range(1,w-1,2*rfa):
+    #    for y in range(2,h-1,2*rfa):
+    #        up    = -calcResY[y,x]
+    #        right = calcResX[y,x]
+    #        length= np.sqrt(up**2+right**2)*0.2
+    #        plt.annotate("", xy=((x+right)*pS,(y+up)*pS), xytext=(x*pS,y*pS), arrowprops=dict(arrowstyle="->, head_width=.05, head_length={}".format(length), lw=.2))
+    #        #ax.arrow(x*pS,y*pS,(x+right)*pS,(y+up)*pS, head_width=0.01, head_length=0.01)
+    #if generateAdditionalArrows:
+    #    for x in range(2,w-1,2*rfa):
+    #        for y in range(1,h-1,2*rfa):
+    #            up    = -calcResY[y,x]
+    #            right = calcResX[y,x]
+    #            length= np.sqrt(up**2+right**2)*0.2
+    #            plt.annotate("", xy=((x+right)*pS,(y+up)*pS), xytext=(x*pS,y*pS), arrowprops=dict(arrowstyle="->, head_width=.05, head_length={}".format(length), lw=.2))
+    #            #ax.arrow(x*pS/2,y*pS,(x+right)*pS,(y+up)*pS, head_width=0.01, head_length=0.01)
+    plt.streamplot(XGrid, YGrid, calcResX, -calcResY, linewidth=0.1, arrowsize=0.2, density=pS, color="black")
     plt.savefig("{}/arrows-calc.png".format(folder), dpi=500)
     #plt.show()
     plt.close()
@@ -377,21 +383,24 @@ if generateArrowsSim:
     plt.imshow(potential)
     plt.colorbar()
     plt.contour(potential, levels=cLevels, colors="black", linewidths=0.3, linestyles="solid")
-    for x in range(1,w-1,2*rfa):
-        for y in range(2,h-1,2*rfa):
-            up    = -(calcPotential(x,y+1,xCh, yCh, cha) - calcPotential(x,y-1,xCh, yCh, cha))/2
-            right = -(calcPotential(x+1,y,xCh, yCh, cha) - calcPotential(x-1,y,xCh, yCh, cha))/2
-            length= np.sqrt(up**2+right**2)*0.2
-            plt.annotate("", xy=((x+right)*pS,(y+up)*pS), xytext=(x*pS,y*pS), arrowprops=dict(arrowstyle="->, head_width=.05, head_length={}".format(length), lw=.2))
-            #ax.arrow(x*pS,y*pS,(x+right)*pS,(y+up)*pS, head_width=0.01, head_length=0.01)
-    if generateAdditionalArrows:
-        for x in range(2,w-1,2*rfa):
-            for y in range(1,h-1,2*rfa):
-                up    = -(calcPotential(x,y+1,xCh, yCh, cha) - calcPotential(x,y-1,xCh, yCh, cha))/2
-                right = -(calcPotential(x+1,y,xCh, yCh, cha) - calcPotential(x-1,y,xCh, yCh, cha))/2
-                length= np.sqrt(up**2+right**2)*0.2
-                plt.annotate("", xy=((x+right)*pS,(y+up)*pS), xytext=(x*pS,y*pS), arrowprops=dict(arrowstyle="->, head_width=.05, head_length={}".format(length), lw=.2))
-                #ax.arrow(x*pS/2,y*pS,(x+right)*pS,(y+up)*pS, head_width=0.01, head_length=0.01)
+    #for x in range(1,w-1,2*rfa):
+    #    for y in range(2,h-1,2*rfa):
+    #        up    = -(calcPotential(x,y+1,xCh, yCh, cha) - calcPotential(x,y-1,xCh, yCh, cha))/2
+    #        right = -(calcPotential(x+1,y,xCh, yCh, cha) - calcPotential(x-1,y,xCh, yCh, cha))/2
+    #        length= np.sqrt(up**2+right**2)*0.2
+    #        plt.annotate("", xy=((x+right)*pS,(y+up)*pS), xytext=(x*pS,y*pS), arrowprops=dict(arrowstyle="->, head_width=.05, head_length={}".format(length), lw=.2))
+    #        #ax.arrow(x*pS,y*pS,(x+right)*pS,(y+up)*pS, head_width=0.01, head_length=0.01)
+    #if generateAdditionalArrows:
+    #    for x in range(2,w-1,2*rfa):
+    #        for y in range(1,h-1,2*rfa):
+    #            up    = -(calcPotential(x,y+1,xCh, yCh, cha) - calcPotential(x,y-1,xCh, yCh, cha))/2
+    #            right = -(calcPotential(x+1,y,xCh, yCh, cha) - calcPotential(x-1,y,xCh, yCh, cha))/2
+    #            length= np.sqrt(up**2+right**2)*0.2
+    #            plt.annotate("", xy=((x+right)*pS,(y+up)*pS), xytext=(x*pS,y*pS), arrowprops=dict(arrowstyle="->, head_width=.05, head_length={}".format(length), lw=.2))
+    #            #ax.arrow(x*pS/2,y*pS,(x+right)*pS,(y+up)*pS, head_width=0.01, head_length=0.01)
+    U = -np.diff(potential[1:, :], axis=1)
+    V = -np.diff(potential[:, 1:], axis=0)
+    plt.streamplot(XGridB[1:], YGridB[1:], U, V, linewidth=0.1, arrowsize=0.2, density=pS, color="black")
     plt.savefig("{}/arrows-calc-divergence.png".format(folder), dpi=500)
     #plt.show()
     plt.close()
@@ -404,7 +413,7 @@ step=5000
 print("------------------")
 print("Starting iterating")
 print("------------------")
-iMax = 10
+iMax = 1
 timeB = time()
 timeA = time()
 for i in range(iMax):
@@ -425,37 +434,37 @@ for i in range(iMax):
     plt.close()
     
     # get max length
-    normMax = 0
-    for x in range(1,w-1,2*rfa):
-        for y in range(2,h-1,2*rfa):
-            up    = 0
-            right = 0
-            if y < h-1:
-                up    -= c[y+1,x]
-            if y > 0:
-                up    -= c[y-1,x]
-            if x < w-1:
-                right += c[y,x+1]
-            if x > 0:
-                right += c[y,x-1]
-            norm = np.sqrt(up**2 + right**2)
-            if norm>normMax:
-                normMax = norm
-    for x in range(2,w-1,2*rfa):
-        for y in range(1,h-1,2*rfa):
-            up    = 0
-            right = 0
-            if y < h-1:
-                right += c[y+1,x]
-            if y > 0:
-                right += c[y-1,x]
-            if x < w-1:
-                up    -= c[y,x+1]
-            if x > 0:
-                up    -= c[y,x-1]
-            norm = np.sqrt(up**2 + right**2)
-            if norm>normMax:
-                normMax = norm
+    #normMax = 0
+    #for x in range(1,w-1,2*rfa):
+    #    for y in range(2,h-1,2*rfa):
+    #        up    = 0
+    #        right = 0
+    #        if y < h-1:
+    #            up    -= c[y+1,x]
+    #        if y > 0:
+    #            up    -= c[y-1,x]
+    #        if x < w-1:
+    #            right += c[y,x+1]
+    #        if x > 0:
+    #            right += c[y,x-1]
+    #        norm = np.sqrt(up**2 + right**2)
+    #        if norm>normMax:
+    #            normMax = norm
+    #for x in range(2,w-1,2*rfa):
+    #    for y in range(1,h-1,2*rfa):
+    #        up    = 0
+    #        right = 0
+    #        if y < h-1:
+    #            right += c[y+1,x]
+    #        if y > 0:
+    #            right += c[y-1,x]
+    #        if x < w-1:
+    #            up    -= c[y,x+1]
+    #        if x > 0:
+    #            up    -= c[y,x-1]
+    #        norm = np.sqrt(up**2 + right**2)
+    #        if norm>normMax:
+    #            normMax = norm
     
     # Field Strengths
     strength = np.zeros(arr.shape)
@@ -502,6 +511,8 @@ for i in range(iMax):
         plt.imshow(potential)
         plt.colorbar()
         plt.contour(potential, levels=cLevels, colors="black", linewidths=0.3, linestyles="solid")
+        flowsUp    = np.zeros(c.shape)
+        flowsRight = np.zeros(c.shape)
         for x in range(1,w-1,2*rfa):
             for y in range(2,h-1,2*rfa):
                 up    = 0
@@ -514,12 +525,14 @@ for i in range(iMax):
                     right += c[y,x+1]
                 if x > 0:
                     right += c[y,x-1]
-                up    = up    / normMax
-                right = right / normMax
-                length= np.sqrt(up**2+right**2)*0.2
-                plt.annotate("", xy=((x+right)*pS,(y+up)*pS), xytext=(x*pS,y*pS), arrowprops=dict(arrowstyle="->, head_width=.05, head_length={}".format(length), lw=.2))
+                flowsUp[y,x]    = up
+                flowsRight[y,x] = right
+                #up    = up    / normMax
+                #right = right / normMax
+                #length= np.sqrt(up**2+right**2)*0.2
+                #plt.annotate("", xy=((x+right)*pS,(y+up)*pS), xytext=(x*pS,y*pS), arrowprops=dict(arrowstyle="->, head_width=.05, head_length={}".format(length), lw=.2))
                 #plt.arrow(x,y,right,up)
-        if generateAdditionalArrows:
+        if generateAdditionalArrows or True:
             for x in range(2,w-1,2*rfa):
                 for y in range(1,h-1,2*rfa):
                     up    = 0
@@ -532,11 +545,14 @@ for i in range(iMax):
                         up    -= c[y,x+1]
                     if x > 0:
                         up    -= c[y,x-1]
-                    up    = up    / normMax
-                    right = right / normMax
-                    length= np.sqrt(up**2+right**2)*0.2
-                    plt.annotate("", xy=((x+right)*pS,(y+up)*pS), xytext=(x*pS,y*pS), arrowprops=dict(arrowstyle="->, head_width=.05, head_length={}".format(length), lw=.2))
+                    flowsUp[y,x]    = up
+                    flowsRight[y,x] = right
+                    #up    = up    / normMax
+                    #right = right / normMax
+                    #length= np.sqrt(up**2+right**2)*0.2
+                    #plt.annotate("", xy=((x+right)*pS,(y+up)*pS), xytext=(x*pS,y*pS), arrowprops=dict(arrowstyle="->, head_width=.05, head_length={}".format(length), lw=.2))
                     #plt.arrow(x,y,right,up)
+        plt.streamplot(XGrid, YGrid, flowsRight, flowsUp, linewidth=0.1, arrowsize=0.2, density=pS, color="black")
         plt.savefig("{}/arrows-{}.png".format(folder,(i+1)*step), dpi=500)
         #plt.savefig("{}/arrows-{}.pdf".format(folder,(i+1)*step))
     if i+1 == iMax and showEnd:
