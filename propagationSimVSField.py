@@ -312,6 +312,8 @@ shorts=None
 #[w//2+w//16, h//2+h//8, w//2-w//16, h//2, 4],
 #]
 
+
+print("--- Generating shorts ---")
 shortsGrid = None
 if shorts is not None and shorts != list():
     shortsGrid = list()
@@ -320,6 +322,7 @@ if shorts is not None and shorts != list():
         shortsGrid.append([sSX+1, sSY, sEX+1, sEY, sP])
         shortsGrid.append([sSX+1, sSY+1, sEX+1, sEY+1, sP])
         shortsGrid.append([sSX  , sSY+1, sEX,   sEY+1, sP])
+print("--- Generating difffusion maps ---")
 distances(u,d,l,r,w,h,dx=dx,dy=dy,dl=dl,applyBorder=applyBorder ,applyNormalization=True, shorts=shortsGrid)
 
 
