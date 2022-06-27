@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-import cupy as np
-import numpy
+import cupy as cp
+import numpy as np
 from time import time
 
 showEnd = False
@@ -40,7 +40,7 @@ yCh = list()
 cha = list()
 a = w//8
 b = h//8
-steps=8
+steps=2
 for i in range(steps):
     angle=np.pi*2.*i/steps
     xCh.append(int(w/2+a*np.cos(angle)))
@@ -51,6 +51,8 @@ print(xCh, yCh, cha)
 # Potential
 # Multiplier for resolution of image of the potential
 potentialScale = pS = 1
+# field line density
+fld = 8
 # Define the number of countour lines
 # With a higher resoulution of the potential and grid, more lines
 # are concentrated near the charges!
@@ -95,36 +97,41 @@ def step(arr, w, h, sinkX, sinkY):
         yield arr2, out
 
 # Step yielding function
-def stepNP(initArr, up, down, left, right, shorts=None):
-    arr = np.array(initArr)
-    out = np.zeros(arr.shape)
-    upR = np.zeros(arr.shape)
-    doR = np.zeros(arr.shape)
-    leR = np.zeros(arr.shape)
-    riR = np.zeros(arr.shape)
-    shortsMask = np.zeros(arr.shape)
-    mask= np.ones(arr.shape)
+def stepNP(initArr, up, down, left, right, shorts=None, steps=1):
+    arr = cp.array(initArr)
+    out = cp.zeros(arr.shape)
+    upR = cp.zeros(arr.shape)
+    doR = cp.zeros(arr.shape)
+    leR = cp.zeros(arr.shape)
+    riR = cp.zeros(arr.shape)
+    up    = cp.array(up   )
+    down  = cp.array(down )
+    left  = cp.array(left )
+    right = cp.array(right)
+    shortsMask = cp.zeros(arr.shape)
+    mask= cp.ones(arr.shape)
     #mask= np.zeros(arr.shape)
     #mask[1:-1,1:-1] = np.ones((arr.shape[0]-2, arr.shape[1]-2))
     #mask[100,200]=0
     while True:
-        arr = arr*mask
-        upR = np.roll(arr*up,   -1, 0)
-        doR = np.roll(arr*down,  1, 0)
-        leR = np.roll(arr*left, -1, 1)
-        reR = np.roll(arr*right, 1, 1)
-        out = out + upR - doR - leR + reR
-        upR = np.roll(upR, -1, 0)
-        doR = np.roll(doR,  1, 0)
-        leR = np.roll(leR, -1, 1)
-        reR = np.roll(reR, 1, 1)
-        if shorts is not None:
-            shortsMask = np.zeros(arr.shape)
-            for sSX, sSY, sEX, sEY, sP in shorts:
-                shortsMask[sEY, sEX] += sP * arr[sSY, sSX]
-        
-        arr = upR + doR + leR + reR + shortsMask
-        yield arr, out
+        for _ in range(steps):
+            arr = arr*mask
+            upR = cp.roll(arr*up,   -1, 0)
+            doR = cp.roll(arr*down,  1, 0)
+            leR = cp.roll(arr*left, -1, 1)
+            reR = cp.roll(arr*right, 1, 1)
+            out = out + upR - doR - leR + reR
+            upR = cp.roll(upR, -1, 0)
+            doR = cp.roll(doR,  1, 0)
+            leR = cp.roll(leR, -1, 1)
+            reR = cp.roll(reR, 1, 1)
+            if shorts is not None:
+                shortsMask = np.zeros(arr.shape)
+                for sSX, sSY, sEX, sEY, sP in shorts:
+                    shortsMask[sEY, sEX] += sP * arr[sSY, sSX]
+            
+            arr = upR + doR + leR + reR + shortsMask
+        yield arr.get(), out.get()
 
 def normalize(u, d, l, r, w, h, shorts=None):
     for x in range(w):
@@ -322,33 +329,33 @@ if shorts is not None and shorts != list():
         shortsGrid.append([sSX+1, sSY, sEX+1, sEY, sP])
         shortsGrid.append([sSX+1, sSY+1, sEX+1, sEY+1, sP])
         shortsGrid.append([sSX  , sSY+1, sEX,   sEY+1, sP])
-print("--- Generating difffusion maps ---")
+print("--- Generating diffusion maps ---")
 distances(u,d,l,r,w,h,dx=dx,dy=dy,dl=dl,applyBorder=applyBorder ,applyNormalization=True, shorts=shortsGrid)
 
 
 # Display transportmation maps
 if input("Enter 'y' to show diffusion maps ").lower() == "y":
     plt.title("UP - Map")
-    plt.imshow(u.get())
+    plt.imshow(u)
     plt.colorbar()
     plt.show()
     plt.title("DOWN - Map")
-    plt.imshow(d.get())
+    plt.imshow(d)
     plt.colorbar()
     plt.show()
     plt.title("LEFT - Map")
-    plt.imshow(l.get())
+    plt.imshow(l)
     plt.colorbar()
     plt.show()
     plt.title("RIGHT - Map")
-    plt.imshow(r.get())
+    plt.imshow(r)
     plt.colorbar()
     plt.show()
 
 # Field strengths
 calcResX, calcResY = genFields(xCh, yCh, cha, arr.shape)
 calcRes = np.sqrt(calcResX**2+calcResY**2)
-plt.imshow(calcRes.get())
+plt.imshow(calcRes)
 plt.colorbar()
 plt.savefig("{}/strenghtsCalc.png".format(folder), dpi=500)
 plt.close()
@@ -359,7 +366,7 @@ plt.close()
 # Generate the potential
 print("--- Generating Potential Field ---")
 potential = genPotential(xCh, yCh, cha, (h*potentialScale, w*potentialScale), potentialScale)
-plt.imshow(potential.get())
+plt.imshow(potential)
 plt.colorbar()
 
 # Calculate the leves for the contours
@@ -369,7 +376,7 @@ cLevels = -np.logspace(contourPotMin, np.log10(-np.min(potential)), noOfContours
 cLevels = np.append(cLevels,[0])
 cLevels = np.append(cLevels,np.logspace(contourPotMin, np.log10(np.max(potential)), noOfContours))
 print(cLevels)
-plt.contour(potential.get(), levels=cLevels, colors="black", linewidths=0.3, linestyles="solid")
+plt.contour(potential, levels=cLevels, colors="black", linewidths=0.3, linestyles="solid")
 plt.savefig("{}/potential.png".format(folder), dpi=500)
 plt.close()
 
@@ -377,35 +384,36 @@ plt.close()
 if generateArrowsSim:
     print("--- Generating el. Field ---")
     #ax = plt.axes()
-    plt.imshow(potential.get())
+    plt.imshow(potential)
     plt.colorbar()
-    plt.contour(potential.get(), levels=cLevels, colors="black", linewidths=0.3, linestyles="solid")
-    plt.streamplot(XGrid.get(), YGrid.get(), calcResX.get(), -calcResY.get(), linewidth=0.1, arrowsize=0.2, density=pS, color="black")
+    plt.contour(potential, levels=cLevels, colors="black", linewidths=0.3, linestyles="solid")
+    plt.streamplot(XGrid, YGrid, calcResX, -calcResY, linewidth=0.1, arrowsize=0.2, density=fld, color="black")
     plt.savefig("{}/arrows-calc.png".format(folder), dpi=2000)
     #plt.show()
     plt.close()
     
     # Divergence methode
     print("--- Generating el. Field via divergence ---")
-    plt.imshow(potential.get())
+    plt.imshow(potential)
     plt.colorbar()
     plt.contour(potential, levels=cLevels, colors="black", linewidths=0.3, linestyles="solid")
     U = -np.diff(potential[1:, :], axis=1)
     V = -np.diff(potential[:, 1:], axis=0)
-    plt.streamplot(XGridB[1:].get(), YGridB[1:].get(), U.get(), V.get(), linewidth=0.1, arrowsize=0.2, density=pS, color="black")
+    plt.streamplot(XGridB[1:], YGridB[1:], U, V, linewidth=0.1, arrowsize=0.2, density=fld, color="black")
     plt.savefig("{}/arrows-calc-divergence.png".format(folder), dpi=2000)
     #plt.show()
     plt.close()
 
 # Iterate and save figures every {step} steps.
-a=iter(stepNP(arr, u,d,l,r,shortsGrid))
 step=5000
+stepsPerNext = 10
+a=iter(stepNP(arr, u,d,l,r,shortsGrid,stepsPerNext))
 
 
 print("------------------")
 print("Starting iterating")
 print("------------------")
-iMax = 1
+iMax = 10
 timeB = time()
 timeA = time()
 for i in range(iMax):
@@ -415,12 +423,12 @@ for i in range(iMax):
         if j*25%step == 0:
             timeB = time()
             if (timeB-timeA) > 0:
-                print(j/step, "Calculated {} Mpixel*steps/sec".format((step-1)*w*h/(timeB-timeA)*1e-6))
+                print(j/step, "Calculated {} Mpixel*steps/sec".format((step-1)*w*h*stepsPerNext/(timeB-timeA)*1e-6))
             timeA = time()
     b, c = next(a)
     print(1)
     c2 = np.abs(c)
-    plt.imshow(c2.get())
+    plt.imshow(c2)
     plt.colorbar()
     plt.savefig("{}/transfer-abs-{}.png".format(folder,(i+1)*step))
     plt.close()
@@ -459,7 +467,7 @@ for i in range(iMax):
             right = right
             length= np.sqrt(up**2+right**2)
             strength[y,x] = length
-    plt.imshow(strength.get())
+    plt.imshow(strength)
     plt.colorbar()
     plt.savefig("{}/strenghts-{}.png".format(folder,(i+1)*step), dpi=500)
     plt.close()
@@ -467,9 +475,9 @@ for i in range(iMax):
     # Draw arrows
     if generateArrows:
         #plt.imshow(c)
-        plt.imshow(potential.get())
+        plt.imshow(potential)
         plt.colorbar()
-        plt.contour(potential.get(), levels=cLevels, colors="black", linewidths=0.3, linestyles="solid")
+        plt.contour(potential, levels=cLevels, colors="black", linewidths=0.3, linestyles="solid")
         flowsUp    = np.zeros(c.shape)
         flowsRight = np.zeros(c.shape)
         for x in range(1,w-1,2*rfa):
@@ -501,7 +509,7 @@ for i in range(iMax):
                         up    -= c[y,x-1]
                     flowsUp[y,x]    = up
                     flowsRight[y,x] = right
-        plt.streamplot(XGrid.get(), YGrid.get(), flowsRight.get(), flowsUp.get(), linewidth=0.1, arrowsize=0.2, density=pS, color="black")
+        plt.streamplot(XGrid, YGrid, flowsRight, flowsUp, linewidth=0.1, arrowsize=0.2, density=fld, color="black")
         plt.savefig("{}/arrows-{}.png".format(folder,(i+1)*step), dpi=2000)
     if i+1 == iMax and showEnd:
         plt.show()
