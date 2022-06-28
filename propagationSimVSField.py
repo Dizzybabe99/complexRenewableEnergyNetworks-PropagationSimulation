@@ -12,8 +12,8 @@ applyBorder = True
 
 # Width and height of nodes, number of nodes equals wN*wH
 # Please only use even numbers
-wN = 500
-hN = 500
+wN = 3000
+hN = 2000
 
 # Reduction factor in arrow generation (integers only!)
 rfa = 1
@@ -38,9 +38,9 @@ dl = 2/h
 xCh = list()
 yCh = list()
 cha = list()
-a = w//8
-b = h//8
-steps=2
+a = w//3
+b = h//3
+steps=8
 for i in range(steps):
     angle=np.pi*2.*i/steps
     xCh.append(int(w/2+a*np.cos(angle)))
@@ -52,7 +52,7 @@ print(xCh, yCh, cha)
 # Multiplier for resolution of image of the potential
 potentialScale = pS = 1
 # field line density
-fld = 8
+fld = 12
 # Define the number of countour lines
 # With a higher resoulution of the potential and grid, more lines
 # are concentrated near the charges!
@@ -405,8 +405,8 @@ if generateArrowsSim:
     plt.close()
 
 # Iterate and save figures every {step} steps.
-step=5000
-stepsPerNext = 10
+step=1000
+stepsPerNext = 20
 a=iter(stepNP(arr, u,d,l,r,shortsGrid,stepsPerNext))
 
 
@@ -430,7 +430,7 @@ for i in range(iMax):
     c2 = np.abs(c)
     plt.imshow(c2)
     plt.colorbar()
-    plt.savefig("{}/transfer-abs-{}.png".format(folder,(i+1)*step))
+    plt.savefig("{}/transfer-abs-{}.png".format(folder,(i+1)*step*stepsPerNext))
     plt.close()
     
     # Field Strengths
@@ -469,7 +469,7 @@ for i in range(iMax):
             strength[y,x] = length
     plt.imshow(strength)
     plt.colorbar()
-    plt.savefig("{}/strenghts-{}.png".format(folder,(i+1)*step), dpi=500)
+    plt.savefig("{}/strenghts-{}-iterations-{}x{}-Grid.png".format(folder,(i+1)*step,wN,hN), dpi=500)
     plt.close()
     
     # Draw arrows
@@ -510,7 +510,7 @@ for i in range(iMax):
                     flowsUp[y,x]    = up
                     flowsRight[y,x] = right
         plt.streamplot(XGrid, YGrid, flowsRight, flowsUp, linewidth=0.1, arrowsize=0.2, density=fld, color="black")
-        plt.savefig("{}/arrows-{}.png".format(folder,(i+1)*step), dpi=2000)
+        plt.savefig("{}/arrows-{}-iterations-{}x{}-Grid.png".format(folder,(i+1)*step*stepsPerNext,wN,hN), dpi=2000)
     if i+1 == iMax and showEnd:
         plt.show()
     plt.close()
